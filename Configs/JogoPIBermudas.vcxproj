@@ -137,7 +137,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="main.c" />
+    <ClCompile Include="../main.c" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
