@@ -1,8 +1,5 @@
 #include "essencials.h"
 
-// =========================================================================
-// === CONSTANTES E VARIÁVEIS GLOBAIS - VERSÃO FINAL CORRIGIDA ===
-// =========================================================================
 enum TECLAS { CIMA, BAIXO, ESQUERDA, DIREITA };
 
 const float PLAYER_SCALE = 6.0f;
@@ -19,12 +16,6 @@ bool  teclas[4] = { false, false, false, false };
 int   cenario_atual = 1;
 int   frame_atual = 1, frame_contador = 0;
 int   player_direcao_y_offset = 0;
-
-ALLEGRO_DISPLAY* display = NULL;
-ALLEGRO_TIMER* timer = NULL;
-ALLEGRO_EVENT_QUEUE* event_queue = NULL;
-ALLEGRO_BITMAP* fundo_cenario = NULL;
-ALLEGRO_BITMAP* player_sprite = NULL;
 
 Rect saida_c1_para_c2, saida_c2_para_c3, saida_c3_fim;
 Rect walls[MAX_WALLS];
@@ -43,9 +34,7 @@ bool interseccao(Rect a, Rect b);
 Rect rect_player();
 void resolver_colisao(float* nx, float* ny);
 
-// =========================================================================
-// === CÓDIGO DO JOGO ===
-// =========================================================================
+
 int main(void) {
     if (!inicializar()) return -1;
     while (rodando) {
@@ -80,8 +69,6 @@ int main(void) {
             if (teclas[ESQUERDA]) nx -= player_velocidade;
             if (teclas[DIREITA])  nx += player_velocidade;
 
-            // --- CORREÇÃO FINAL DA LÓGICA DE ANIMAÇÃO ---
-            // A ORDEM DAS LINHAS NA SUA SPRITESHEET É DIFERENTE. VAMOS CORRIGIR OS NÚMEROS.
             if (teclas[ESQUERDA]) {
                 player_direcao_y_offset = FRAME_ALTURA * 2; // Esquerda está na 3ª linha (Y=36)
             }
@@ -134,7 +121,7 @@ int inicializar() {
     al_init(); al_init_image_addon(); al_install_keyboard(); al_init_primitives_addon();
     timer = al_create_timer(1.0 / FPS);
     display = al_create_display(LARGURA_TELA, ALTURA_TELA);
-    al_set_window_title(display, "RESOLVIDO, CARALHO!");
+    al_set_window_title(display, "Archimetria");
     event_queue = al_create_event_queue();
     player_sprite = al_load_bitmap("imagens/imagem-sprite.png");
     if (!player_sprite) { error_msg("NAO ACHEI 'imagens/imagem-sprite.png'."); return 0; }
