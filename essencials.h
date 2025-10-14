@@ -18,6 +18,12 @@ typedef struct { float x, y, w, h; } Rect;
 #define FPS             60.0
 #define MAX_WALLS       32
 
+ALLEGRO_DISPLAY* display = NULL;
+ALLEGRO_TIMER* timer = NULL;
+ALLEGRO_EVENT_QUEUE* event_queue = NULL;
+ALLEGRO_BITMAP* fundo_cenario = NULL;
+ALLEGRO_BITMAP* player_sprite = NULL;
+
 // 4. DECLARAÇÃO DAS VARIÁVEIS GLOBAIS (AVISA QUE ELAS EXISTEM)
 extern ALLEGRO_DISPLAY* display;
 extern ALLEGRO_TIMER* timer;
