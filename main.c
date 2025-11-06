@@ -1,5 +1,29 @@
 #include "essencials.h"
 
+// ===================================================================
+// 
+//               VARIÁVEIS GLOBAIS E CONSTANTES
+//
+// ===================================================================
+
+//  A "Máquina de Estados" que controla o jogo
+enum GAME_STATE {
+    MENU,
+    JOGANDO
+};
+
+//  Variável global que diz em qual estado estamos
+int estado_atual = MENU; // O jogo agora começa no MENU
+
+//  Bitmap para a imagem de fundo do menu
+ALLEGRO_BITMAP* fundo_menu = NULL;
+
+//  Retângulo clicável para o botão de start
+Rect botao_start_rect;
+
+
+// --- Suas variáveis  ---
+
 enum TECLAS { CIMA, BAIXO, ESQUERDA, DIREITA };
 
 const float PLAYER_SCALE = 6.0f;
@@ -21,7 +45,12 @@ Rect saida_c1_para_c2, saida_c2_para_c3, saida_c3_fim;
 Rect walls[MAX_WALLS];
 int  wall_count = 0;
 
-// Protótipos
+
+ 
+//                        PROTÓTIPOS
+
+
+// (Estes são os seus protótipos )
 void error_msg(const char* texto);
 int  inicializar();
 void finalizar();
@@ -35,129 +64,235 @@ Rect rect_player();
 void resolver_colisao(float* nx, float* ny);
 
 
+
+//                      FUNÇÃO MAIN (Principal)
+//  usa Máquina de Estados.
 int main(void) {
+
     if (!inicializar()) return -1;
+
     while (rodando) {
         ALLEGRO_EVENT event;
         al_wait_for_event(event_queue, &event);
-        if (event.type == ALLEGRO_EVENT_DISPLAY_CLOSE) rodando = false;
 
-        if (event.type == ALLEGRO_EVENT_KEY_DOWN) {
-            switch (event.keyboard.keycode) {
-            case ALLEGRO_KEY_W: teclas[CIMA] = true; break;
-            case ALLEGRO_KEY_S: teclas[BAIXO] = true; break;
-            case ALLEGRO_KEY_A: teclas[ESQUERDA] = true; break;
-            case ALLEGRO_KEY_D: teclas[DIREITA] = true; break;
-            }
-        }
-        if (event.type == ALLEGRO_EVENT_KEY_UP) {
-            switch (event.keyboard.keycode) {
-            case ALLEGRO_KEY_W: teclas[CIMA] = false; break;
-            case ALLEGRO_KEY_S: teclas[BAIXO] = false; break;
-            case ALLEGRO_KEY_A: teclas[ESQUERDA] = false; break;
-            case ALLEGRO_KEY_D: teclas[DIREITA] = false; break;
-            case ALLEGRO_KEY_ESCAPE: rodando = false; break;
-            }
+        // --- Evento Global (funciona em todos os estados) ---
+        if (event.type == ALLEGRO_EVENT_DISPLAY_CLOSE) {
+            rodando = false;
         }
 
-        if (event.type == ALLEGRO_EVENT_TIMER) {
-            bool esta_movendo = teclas[CIMA] || teclas[BAIXO] || teclas[ESQUERDA] || teclas[DIREITA];
-            float nx = player_x, ny = player_y;
+        // --- Lógica da Máquina de Estados ---
+        switch (estado_atual) {
 
-            if (teclas[CIMA])    ny -= player_velocidade;
-            if (teclas[BAIXO])   ny += player_velocidade;
-            if (teclas[ESQUERDA]) nx -= player_velocidade;
-            if (teclas[DIREITA])  nx += player_velocidade;
+            // ===================================
+            //          ESTADO: MENU
+            // ===================================
+        case MENU: {
 
-            if (teclas[ESQUERDA]) {
-                player_direcao_y_offset = FRAME_ALTURA * 2; // Esquerda está na 3ª linha (Y=36)
-            }
-            else if (teclas[DIREITA]) {
-                player_direcao_y_offset = FRAME_ALTURA * 1; // Direita está na 2ª linha (Y=18)
-            }
-            else if (teclas[CIMA]) {
-                player_direcao_y_offset = FRAME_ALTURA * 3; // Cima está na 4ª linha (Y=54)
-            }
-            else if (teclas[BAIXO]) {
-                player_direcao_y_offset = FRAME_ALTURA * 0; // Baixo está na 1ª linha (Y=0)
-            }
+            // 1. Checar por cliques do mouse
+            if (event.type == ALLEGRO_EVENT_MOUSE_BUTTON_DOWN) {
+                if (event.mouse.button == 1) { // Botão esquerdo
+                    int mx = event.mouse.x;
+                    int my = event.mouse.y;
 
-            if (esta_movendo) {
-                frame_contador++;
-                if (frame_contador >= FRAME_DELAY) {
-                    frame_contador = 0;
-                    frame_atual++;
-                    if (frame_atual >= MAX_FRAMES_POR_LINHA) frame_atual = 0;
+                    // Checa se o clique (mx, my) está DENTRO do botão
+                    if (mx >= botao_start_rect.x &&
+                        mx <= botao_start_rect.x + botao_start_rect.w &&
+                        my >= botao_start_rect.y &&
+                        my <= botao_start_rect.y + botao_start_rect.h)
+                    {
+                        // CLICOU! Muda o estado para JOGANDO
+                        estado_atual = JOGANDO;
+                    }
                 }
             }
-            else {
-                frame_atual = 1;
+
+            // 2. Desenhar a tela de Menu
+            if (event.type == ALLEGRO_EVENT_TIMER) {
+                al_draw_bitmap(fundo_menu, 0, 0, 0);               
+                al_flip_display();
             }
 
-            resolver_colisao(&nx, &ny);
-            player_x = nx; player_y = ny;
+        } break; // Fim do case MENU
 
-            Rect p = rect_player();
-            if (cenario_atual == 1) { if (interseccao(p, saida_c1_para_c2)) carregar_cenario(2); }
-            else if (cenario_atual == 2) { if (interseccao(p, saida_c2_para_c3)) carregar_cenario(3); }
-            else if (cenario_atual == 3) { if (saida_c3_fim.w > 0 && interseccao(p, saida_c3_fim)) rodando = false; }
 
-            al_draw_bitmap(fundo_cenario, 0, 0, 0);
-            if (player_sprite) {
-                al_draw_scaled_bitmap(player_sprite,
-                    frame_atual * FRAME_LARGURA, player_direcao_y_offset,
-                    FRAME_LARGURA, FRAME_ALTURA,
-                    player_x, player_y,
-                    FRAME_LARGURA * PLAYER_SCALE, FRAME_ALTURA * PLAYER_SCALE, 0);
+                 // ===================================
+                 //          ESTADO: JOGANDO
+                 // ===================================
+        case JOGANDO: {
+
+            // (Todo o seu código de jogo vai aqui dentro)
+
+            // 1. Lógica de Teclado 
+            if (event.type == ALLEGRO_EVENT_KEY_DOWN) {
+                switch (event.keyboard.keycode) {
+                case ALLEGRO_KEY_W: teclas[CIMA] = true; break;
+                case ALLEGRO_KEY_S: teclas[BAIXO] = true; break;
+                case ALLEGRO_KEY_A: teclas[ESQUERDA] = true; break;
+                case ALLEGRO_KEY_D: teclas[DIREITA] = true; break;
+                }
             }
-            al_flip_display();
-        }
-    }
+            if (event.type == ALLEGRO_EVENT_KEY_UP) {
+                switch (event.keyboard.keycode) {
+                case ALLEGRO_KEY_W: teclas[CIMA] = false; break;
+                case ALLEGRO_KEY_S: teclas[BAIXO] = false; break;
+                case ALLEGRO_KEY_A: teclas[ESQUERDA] = false; break;
+                case ALLEGRO_KEY_D: teclas[DIREITA] = false; break;
+                case ALLEGRO_KEY_ESCAPE: rodando = false; break;
+                }
+            }
+
+            // 2. Lógica do Jogo (Timer) 
+            if (event.type == ALLEGRO_EVENT_TIMER) {
+                bool esta_movendo = teclas[CIMA] || teclas[BAIXO] || teclas[ESQUERDA] || teclas[DIREITA];
+                float nx = player_x, ny = player_y;
+
+                if (teclas[CIMA])    ny -= player_velocidade;
+                if (teclas[BAIXO])   ny += player_velocidade;
+                if (teclas[ESQUERDA]) nx -= player_velocidade;
+                if (teclas[DIREITA])  nx += player_velocidade;
+
+                // Animação de direção
+                if (teclas[BAIXO]) { // Tecla S
+                    player_direcao_y_offset = FRAME_ALTURA * 2;
+                }
+                else if (teclas[DIREITA]) { // Tecla D
+                    player_direcao_y_offset = FRAME_ALTURA * 1;
+                }
+                else if (teclas[ESQUERDA]) { // Tecla A
+                    player_direcao_y_offset = FRAME_ALTURA * 3;
+                }
+                else if (teclas[CIMA]) { // Tecla W
+                    player_direcao_y_offset = FRAME_ALTURA * 0;
+                }
+
+                // Animação de quadros (frames)
+                if (esta_movendo) {
+                    frame_contador++;
+                    if (frame_contador >= FRAME_DELAY) {
+                        frame_contador = 0;
+                        frame_atual++;
+                        if (frame_atual >= MAX_FRAMES_POR_LINHA) frame_atual = 0;
+                    }
+                }
+                else {
+                    frame_atual = 1;
+                }
+
+                // Colisão e movimento
+                resolver_colisao(&nx, &ny);
+                player_x = nx; player_y = ny;
+
+                // Gatilhos de cenário
+                Rect p = rect_player();
+                if (cenario_atual == 1) { if (interseccao(p, saida_c1_para_c2)) carregar_cenario(2); }
+                else if (cenario_atual == 2) { if (interseccao(p, saida_c2_para_c3)) carregar_cenario(3); }
+                else if (cenario_atual == 3) { if (saida_c3_fim.w > 0 && interseccao(p, saida_c3_fim)) rodando = false; }
+
+                // Desenho do jogo
+                al_draw_bitmap(fundo_cenario, 0, 0, 0);
+                if (player_sprite) {
+                    al_draw_scaled_bitmap(player_sprite,
+                        frame_atual * FRAME_LARGURA, player_direcao_y_offset,
+                        FRAME_LARGURA, FRAME_ALTURA,
+                        player_x, player_y,
+                        FRAME_LARGURA * PLAYER_SCALE, FRAME_ALTURA * PLAYER_SCALE, 0);
+                }
+                al_flip_display();
+            }
+
+        } break; // Fim do case JOGANDO
+        } // Fim do switch
+    } // Fim do while(rodando)
+
     finalizar();
     return 0;
 }
 
+
+// ===================================================================
+// 
+//                   FUNÇÕES DE INICIALIZAÇÃO E FINALIZAÇÃO
+//
+// ===================================================================
+
+//  mouse e carregamos os assets do menu
 int inicializar() {
-    al_init(); al_init_image_addon(); al_install_keyboard(); al_init_primitives_addon();
+    al_init();
+    al_init_image_addon();
+    al_install_keyboard();
+    al_init_primitives_addon();
+    al_install_mouse();
+
     timer = al_create_timer(1.0 / FPS);
     display = al_create_display(LARGURA_TELA, ALTURA_TELA);
     al_set_window_title(display, "Archimetria");
     event_queue = al_create_event_queue();
+
+    // --- Carregar assets do JOGO ---
     player_sprite = al_load_bitmap("imagens/imagem-sprite.png");
     if (!player_sprite) { error_msg("NAO ACHEI 'imagens/imagem-sprite.png'."); return 0; }
+
+    // Carregar assets do MENU ---
+    fundo_menu = al_load_bitmap("imagens/menu.jogo.png"); // O nome da sua imagem
+    if (!fundo_menu) { error_msg("NAO ACHEI 'Design sem nome.png'."); return 0; }
+
     player_largura = FRAME_LARGURA * PLAYER_SCALE;
     player_altura = FRAME_ALTURA * PLAYER_SCALE;
+
+    // Carrega o cenário 1 (para estar pronto quando o jogo começar)
     carregar_cenario(1);
+
+    // Registra as fontes de eventos
     al_register_event_source(event_queue, al_get_display_event_source(display));
     al_register_event_source(event_queue, al_get_timer_event_source(timer));
     al_register_event_source(event_queue, al_get_keyboard_event_source());
+
+    // Registra a fonte de eventos do mouse
+    al_register_event_source(event_queue, al_get_mouse_event_source());
+
+    // Define a área clicável do botão START
+    // Formato: { x, y, largura, altura }
+    // !!! ATENÇÃO: Ajuste estes valores!!! 
+    // Use o Paint na sua imagem "Design sem nome.png" para achar os valores exatos.
+    botao_start_rect = (Rect){ 790, 120, 200, 70 };
+
     al_start_timer(timer);
     return 1;
 }
 
-void configurar_gatilhos() {
-    saida_c1_para_c2 = (Rect){ 0,0,0,0 }; saida_c2_para_c3 = (Rect){ 0,0,0,0 }; saida_c3_fim = (Rect){ 0,0,0,0 };
-    if (cenario_atual == 1) { saida_c1_para_c2 = (Rect){ 1150, 900, 150, 150 }; }
-    else if (cenario_atual == 2) { saida_c2_para_c3 = (Rect){ 880, 540, 150, 80 }; }
-    else if (cenario_atual == 3) { saida_c3_fim = (Rect){ 1200, 900, 180, 160 }; }
-}
-
+// Adicionamos a destruição dos assets do menu
 void finalizar() {
     if (player_sprite)  al_destroy_bitmap(player_sprite);
     if (fundo_cenario)  al_destroy_bitmap(fundo_cenario);
+
+    // Destrói o bitmap do menu
+    if (fundo_menu)     al_destroy_bitmap(fundo_menu);
+
     if (timer)          al_destroy_timer(timer);
     if (event_queue)    al_destroy_event_queue(event_queue);
     if (display)        al_destroy_display(display);
 }
+
+
+// ===================================================================
+// 
+//                    FUNÇÕES AUXILIARES (Sem mudanças)
+//
+// ===================================================================
+
 void error_msg(const char* texto) {
     al_show_native_message_box(display, "ERRO", "Ocorreu um erro:", texto, NULL, ALLEGRO_MESSAGEBOX_ERROR);
 }
+
 void carregar_cenario(int cenario) {
     if (fundo_cenario) { al_destroy_bitmap(fundo_cenario); fundo_cenario = NULL; }
     const char* caminho = NULL;
     cenario_atual = cenario;
+
     if (cenario == 1) {
-        caminho = "imagens/cenarios/cenario1_1.png"; player_x = 572; player_y = 294;
+        caminho = "imagens/cenarios/cenario1_1.png";
+        player_x = 530; player_y = 250;
+        player_direcao_y_offset = FRAME_ALTURA * 2;
         configurar_gatilhos(); configurar_walls_do_cenario_1();
     }
     else if (cenario == 2) {
@@ -168,32 +303,49 @@ void carregar_cenario(int cenario) {
         caminho = "imagens/cenarios/cenario3.png"; player_x = 880; player_y = 700;
         configurar_gatilhos(); configurar_walls_do_cenario_3();
     }
+
     fundo_cenario = al_load_bitmap(caminho);
     if (!fundo_cenario) {
         char msg[256]; snprintf(msg, sizeof(msg), "Falha ao carregar a imagem: %s", caminho);
         error_msg(msg); rodando = false;
     }
 }
+
+void configurar_gatilhos() {
+    saida_c1_para_c2 = (Rect){ 0,0,0,0 }; saida_c2_para_c3 = (Rect){ 0,0,0,0 }; saida_c3_fim = (Rect){ 0,0,0,0 };
+    if (cenario_atual == 1) { saida_c1_para_c2 = (Rect){ 1150, 900, 150, 150 }; }
+    else if (cenario_atual == 2) { saida_c2_para_c3 = (Rect){ 880, 540, 150, 80 }; }
+    else if (cenario_atual == 3) { saida_c3_fim = (Rect){ 1200, 900, 180, 160 }; }
+}
+
 void add_wall(float x, float y, float w, float h) { if (wall_count < MAX_WALLS) walls[wall_count++] = (Rect){ x,y,w,h }; }
+
 void clear_walls() { wall_count = 0; }
+
 void configurar_walls_do_cenario_1() {
     clear_walls(); add_wall(460, 150, 1856, 45); add_wall(460, 150, 60, 1016); add_wall(1401, 190, 40, 1016);
     add_wall(518, 897, 640, 48); add_wall(1247, 902, 1856, 48);
 }
+
 void configurar_walls_do_cenario_2() {
     clear_walls(); add_wall(16, 16, 1888, 24); add_wall(16, 1040, 1888, 24); add_wall(16, 16, 24, 1048);
     add_wall(1880, 16, 24, 1048);
 }
+
 void configurar_walls_do_cenario_3() {
     clear_walls(); add_wall(480, 180, 1824, 32); add_wall(480, 180, 32, 920); add_wall(1408, 209, 32, 920);
     add_wall(57, 866, 1100, 32); add_wall(1243, 867, 936, 32);
 }
+
 bool interseccao(Rect a, Rect b) {
     if (b.w <= 0 || b.h <= 0) return false;
     return !(a.x + a.w <= b.x || a.x >= b.x + b.w || a.y + a.h <= b.y || a.y >= b.y + b.h);
 }
+
 Rect rect_player_xy(float x, float y) { return (Rect) { x, y, (float)player_largura, (float)player_altura }; }
+
 Rect rect_player() { return rect_player_xy(player_x, player_y); }
+
 void resolver_colisao(float* nx, float* ny) {
     float x = *nx, y = *ny;
     Rect testX = rect_player_xy(x, player_y);
