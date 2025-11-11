@@ -1,0 +1,4 @@
+﻿  main.c
+C:\Users\ronal\source\repos\OsBermudas\Arquimetria\main.c(372,10): warning C4013: 'al_init_font_addon' indefinido; assumindo extern retornando int
+C:\Users\ronal\source\repos\OsBermudas\Arquimetria\main.c(373,10): warning C4013: 'al_init_ttf_addon' indefinido; assumindo extern retornando int
+  JogoPIBermudas.vcxproj -> C:\Users\ronal\source\repos\OsBermudas\Arquimetria\x64\Debug\JogoPIBermudas.exe
