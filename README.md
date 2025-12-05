@@ -12,7 +12,6 @@ Arquimetros herda a casa de seu distante tio-avô, um arquiteto e inventor genia
 ## Colaboradores
 
 - [@monge95](https://github.com/monge95)
-- [@pedrobrz](https://github.com/pedrobrz)
-- [@pedrohcguedes](https://github.com/pedrohcguedes)
 - [@petrvs0x01](https://github.com/petrvs0x01)
+
 
