@@ -1,8 +1,7 @@
 
 # Arquimetria
 
-Arquimetros herda a casa de seu distante tio-avô, um arquiteto e inventor genial, mas excêntrico, que desapareceu misteriosamente anos atrás. Em sua busca para conhecer o parente, ele encontra uma morada totalmente regida pelas leis da geometria. No testamento, uma única frase enigmática: "Minha verdadeira herança não está em um cofre, mas na própria estrutura da minha morada. Apenas aquele que enxergar a beleza na medida e na forma poderá reivindicá-la." Será Arquimetros digno de herdá-la?
-
+Neste jogo de puzzles educativos, o jogador assume o papel de um herdeiro que deve provar seu valor para reclamar o antigo ouro contido na casa de um antepassado matemático excêntrico. A mecânica central gira em torno da resolução de problemas práticos de geometria: é necessário saber como lidar com os cálculos de volume, perímetro e do Teorema de Pitágoras para herdar o baú do tesouro de seu antepassado. Será que você será digno de herdar o baú do tesouro?
 
 ## Documentação 
 
@@ -13,5 +12,6 @@ Arquimetros herda a casa de seu distante tio-avô, um arquiteto e inventor genia
 
 - [@monge95](https://github.com/monge95)
 - [@petrvs0x01](https://github.com/petrvs0x01)
+
 
 
